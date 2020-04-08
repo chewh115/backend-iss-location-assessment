@@ -9,6 +9,7 @@ __author__ = 'chewh115, with Indy latitude help from Janell and Kano'
 import requests
 import time
 import turtle
+import argparse
 
 
 def get_names_of_astros():
@@ -37,7 +38,7 @@ def get_iss_coordinates():
     return latitude, longitude
 
 
-def show_on_map(coordinates):
+def show_on_map(coordinates, given_coordinates):
     """Draws the location of ISS on a map"""
     world_map = turtle.Screen()
     world_map.setup(width=720, height=360)
@@ -48,29 +49,43 @@ def show_on_map(coordinates):
     iss_station.shape('iss.gif')
     iss_station.penup()
     iss_station.goto(float(coordinates[1]), float(coordinates[0]))
-    over_indy(world_map)
+    next_pass(given_coordinates, world_map)
     world_map.exitonclick()
     return world_map
 
 
-def over_indy(turtle_screen):
-    lat = 39.7684
-    lon = -86.1581
-    indy_pass = requests.get(
+def next_pass(given_coordinates, turtle_screen):
+    """Calculates the next pass of the ISS over given coordinates
+       and shows coordinates on map with information.
+    """
+    lat = given_coordinates[0]
+    lon = given_coordinates[1]
+    given_coordinates_pass = requests.get(
         f'http://api.open-notify.org/iss-pass.json?lat={lat}&lon={lon}&n=1')
-    pass_time = time.ctime(indy_pass.json()['response'][0]['risetime'])
-    indy_pass = turtle.Turtle()
-    indy_pass.penup()
-    indy_pass.shape('circle')
-    indy_pass.color('yellow')
-    indy_pass.goto(lon, lat)
-    indy_pass.write(pass_time, align='right', font=20)
+    pass_time = time.ctime(given_coordinates_pass.json()
+                           ['response'][0]['risetime'])
+    given_coordinates_pass = turtle.Turtle()
+    given_coordinates_pass.penup()
+    given_coordinates_pass.shape('circle')
+    given_coordinates_pass.color('yellow')
+    given_coordinates_pass.goto(lon, lat)
+    given_coordinates_pass.write(pass_time, align='right', font=20)
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description='Input latitude and longitude to track')
+    parser.add_argument(
+        '--lat', default=39.7684, type=float, help="""latitude to search.
+        Default = Indy lat""")
+    parser.add_argument(
+        '--lon', default=-86.1581, type=float, help="""longitude to search.
+        Default = Indy lon""")
+    given_coordinates = [parser.parse_args().lat, parser.parse_args().lon]
+    print(given_coordinates)
     get_names_of_astros()
     coordinates = get_iss_coordinates()
-    show_on_map(coordinates)
+    show_on_map(coordinates, given_coordinates)
 
 
 if __name__ == '__main__':
